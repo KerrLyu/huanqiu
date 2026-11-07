@@ -896,7 +896,7 @@ async function localLoop(){
 // ---------------- online (two devices, shared doc) ----------------
 const NET = {
   peer:null, conn:null, doc:null, seq:0, lastSeq:-1, CP:null, role:'', code:'', myName:'', retryT:null, wTimer:null,
-  status(t,ok){ $('net').textContent=t; $('net').className='net'+(ok?' ok':''); const s=$('lbStatus'); if(s) s.textContent=t; },
+  status(t,ok){ this.lastStatus=t; $('net').textContent=t; $('net').className='net'+(ok?' ok':''); const s=$('lbStatus'); if(s) s.textContent=t; },
   init(){
     try{ const d=JSON.parse(store.get('world_p2p_doc')); if(d && d.status==='playing' && d.S && !d.S.over) this.doc=d; }catch(e){}
     this.code=store.get('world_p2p_code')||''; this.role=store.get('world_p2p_role')||'';
@@ -1034,12 +1034,12 @@ function renderLobby(){
   if(NET.lobbyState==='hosting'){
     const link = location.href.split('#')[0]+'#room='+NET.code;
     h=`<div style="text-align:center">房间号<div class="fz" style="font-size:44px;letter-spacing:8px;color:var(--ink)">${NET.code||'····'}</div></div>
-      <div class="muted" id="lbStatus">正在创建房间…</div>
+      <div class="muted" id="lbStatus">${esc(NET.lastStatus||'正在创建房间…')}</div>
       <div class="muted">让对方用自己的手机打开这个网址，选「两部手机联机」，输入房间号加入。或者把邀请链接发给他：</div>
       <button class="bigbtn no" id="lbCopy">复制邀请链接</button><div class="muted" id="lbLink" style="word-break:break-all">${esc(link)}</div>
       <button class="bigbtn no" id="lbCancel">取消</button>`;
   } else if(NET.lobbyState==='joining'){
-    h=`<div class="muted" id="lbStatus">正在连接…</div><button class="bigbtn no" id="lbCancel">取消</button>`;
+    h=`<div class="muted" id="lbStatus">${esc(NET.lastStatus||'正在连接…')}</div><button class="bigbtn no" id="lbCancel">取消</button>`;
   } else {
     h=`<button class="bigbtn" id="lbCreate">创建房间</button>
       <div class="field">或者输入对方的房间号加入</div>

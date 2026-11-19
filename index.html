@@ -77,11 +77,11 @@
 
   .ov{position:fixed;inset:0;background:rgba(220,235,226,.96);display:none;align-items:center;justify-content:center;z-index:10;padding:12px}
   .ov.show{display:flex}
-  #ovAsk{z-index:12}
+  #ovAsk{z-index:12}#ovTrade{align-items:flex-start}
   .box{background:var(--card);border-radius:18px;padding:18px;max-width:440px;width:100%;text-align:center;box-shadow:0 10px 30px -12px rgba(0,0,0,.3);max-height:94vh;overflow:auto}
   .box h2{margin:0 0 6px;font-size:26px}
   .box p{color:var(--muted);font-size:13px;line-height:1.65;margin:5px 0}
-  .box input,.box select{font:inherit;font-size:15px;padding:8px 11px;border-radius:10px;border:1px solid var(--line);width:100%;margin:3px 0;background:#fff;color:var(--ink)}
+  .box input,.box select{font:inherit;font-size:15px;padding:8px 11px;border-radius:10px;border:1px solid var(--line);width:100%;margin:3px 0;background:#fff;color:var(--ink);-webkit-user-select:text;user-select:text}
   .field{text-align:left;font-size:12px;color:var(--muted);margin-top:8px}
   .bigbtn{width:100%;margin-top:10px;font:inherit;font-size:15px;font-weight:600;border-radius:99px;border:none;padding:11px;cursor:pointer;background:var(--ink);color:#fff}
   .bigbtn.no{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
@@ -398,7 +398,7 @@ function ask(q, msg, acts, big=false){
   if(MODE!=='online' || q===mySeat) return new Promise(r=>{ resolver=r; });
   return new Promise(r=>{ remoteWait={id:S.pendId, r}; });
 }
-function clickAct(k){ if(!resolver) return; const r=resolver; resolver=null; S.acts=[]; S.actsSeat=-1; S.big=false; r(k); }
+function clickAct(k){ if(!resolver) return; const r=resolver; resolver=null; S.acts=[]; S.actsSeat=-1; S.big=false; $('ovAsk').classList.remove('show'); r(k); }
 function handleAct(k){
   if(engineRunning && resolver){ clickAct(k); return; }
   if(MODE==='online' && S && S.actsSeat===mySeat && S.pendId){
@@ -1104,10 +1104,10 @@ $('manageBody').addEventListener('click',e=>{
 $('manageClose').onclick=()=>{ $('ovManage').classList.remove('show'); const r=manageDone; manageDone=null; render(); if(r) r(); };
 
 // ---------------- trade panel ----------------
-let tradeDone=null, tradeFrom=0;
+let tradeDone=null, tradeFrom=0, tradeLock=false;
 function tradable(i){ return !(BOARD[i].t==='street' && groupHasHouses(BOARD[i].g)); }
 function openTrade(p, pre){
-  tradeFrom=p; const o=1-p;
+  tradeFrom=p; tradeLock=false; const o=1-p;
   const list=q=>{
     const items=ownedBy(q).sort((a,b)=>a-b);
     if(!items.length) return `<div class="none">没有地产</div>`;
@@ -1144,12 +1144,12 @@ $('tradeBody').addEventListener('change',updateAna);
 $('tradeBody').addEventListener('input',e=>{ if(e.target.type==='number') updateAna(); });
 function closeTrade(result){ $('ovTrade').classList.remove('show'); const r=tradeDone; tradeDone=null; render(); if(r) r(result||null); }
 function aiAccept(t){
-  executeTrade(t);
+  if(tradeLock) return; tradeLock=true; executeTrade(t);
   $('tradeRes').innerHTML=`<span style="color:#1E9E5A">🤖 ${aiReason(t,true)}</span>`;
-  setTimeout(()=>closeTrade(null),1300);
+  setTimeout(()=>{ if(tradeLock){ tradeLock=false; closeTrade(null); } },1300);
 }
 $('tradeGo').onclick=()=>{
-  const t=readTrade(), res=$('tradeRes');
+  if(tradeLock) return; const t=readTrade(), res=$('tradeRes');
   if(!t.give.length && !t.get.length && !t.cg && !t.ct){ res.textContent='先选点东西吧'; return; }
   if(t.cg>S.pl[t.from].money){ res.textContent='你的现金不够'; return; }
   if(t.ct>S.pl[t.to].money){ res.textContent=`${nm(t.to)} 没那么多现金`; return; }
@@ -1164,7 +1164,7 @@ $('tradeGo').onclick=()=>{
     $('ctrBtn').onclick=()=>aiAccept(c);
   } else res.innerHTML=`<span style="color:#B03A2E">🤖 ${why}${delta<-300?' 这个差距太大，我想不出能成交的方案 😏':''}</span>`;
 };
-$('tradeClose').onclick=()=>closeTrade(null);
+$('tradeClose').onclick=()=>{ if(!tradeLock) closeTrade(null); };
 
 // ---------------- render ----------------
 const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
